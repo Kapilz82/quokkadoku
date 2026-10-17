@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'levels.dart';
 
 /// Star-Battle-Regeln: n x n Gitter, n Gebiete, genau ein Quokka pro Zeile,
 /// Spalte und Gebiet, keine diagonale Berührung.
@@ -17,9 +18,33 @@ class Puzzle {
   /// Keine Mini-Gebiete, sonst ist der Quokka geschenkt.
   static const minRegion = 3;
 
-  /// Deterministisch pro Runde und Größe, damit Runde 7 immer Runde 7 ist.
-  static Puzzle forLevel(int level, int n) =>
-      generate(n, Random(level * 7919 + n));
+  static bool isStored(int level, int n) =>
+      level - 1 < (levels[n]?.length ?? 0);
+
+  /// Vorab generierte Rätsel aus levels.dart; danach Fallback auf den
+  /// Generator (bei 10x10 langsam, deshalb die Vorberechnung).
+  static Puzzle forLevel(int level, int n) {
+    final list = levels[n] ?? const [];
+    if (level - 1 < list.length) return fromRegions(list[level - 1]);
+    return generate(n, Random(level * 7919 + n));
+  }
+
+  /// Gebiete als n*n Ziffern, Lösung wird per Löser bestimmt.
+  static Puzzle fromRegions(String s) {
+    final n = sqrt(s.length).round();
+    final reg = List.generate(
+        n, (r) => List.generate(n, (c) => int.parse(s[r * n + c])));
+    final sol = solve(n, reg)!;
+    return Puzzle._(n, reg, sol);
+  }
+
+  String toRegions() => region.expand((r) => r).join();
+
+  static List<int>? solve(int n, List<List<int>> reg) {
+    List<int>? found;
+    _search(n, reg, 2, (cols) => found ??= List.of(cols));
+    return found;
+  }
 
   /// Felder, die ein Quokka bei (r, c) blockiert: Zeile, Spalte, Gebiet,
   /// diagonale Nachbarn.
@@ -120,7 +145,11 @@ class Puzzle {
     return size.any((s) => s < minRegion) ? null : reg;
   }
 
-  static int countSolutions(int n, List<List<int>> reg, {int limit = 2}) {
+  static int countSolutions(int n, List<List<int>> reg, {int limit = 2}) =>
+      _search(n, reg, limit, (_) {});
+
+  static int _search(
+      int n, List<List<int>> reg, int limit, void Function(List<int>) onHit) {
     final cols = List.filled(n, -1);
     final usedReg = List.filled(n, false);
     var count = 0;
@@ -128,6 +157,7 @@ class Puzzle {
       if (count >= limit) return;
       if (r == n) {
         count++;
+        onHit(cols);
         return;
       }
       for (var c = 0; c < n; c++) {

@@ -50,7 +50,7 @@ class _GamePageState extends State<GamePage> {
   int level = 1;
   int size = 7;
   int score = 0;
-  bool autoCross = true; // Luisa setzt ihre ✕ lieber selbst
+  bool autoCross = false; // Luisa setzt ihre ✕ lieber selbst
   late Puzzle puzzle;
   late List<List<Mark>> marks;
   int hearts = 3;
@@ -67,9 +67,8 @@ class _GamePageState extends State<GamePage> {
       size = p.getInt('size') ?? 7;
       level = p.getInt('level_$size') ?? 1;
       score = p.getInt('score') ?? 0;
-      autoCross = p.getBool('autoCross') ?? true;
+      autoCross = p.getBool('autoCross') ?? false;
       _start();
-      setState(() => loaded = true);
     });
   }
 
@@ -83,14 +82,20 @@ class _GamePageState extends State<GamePage> {
     await p.setInt('size', n);
     size = n;
     level = p.getInt('level_$size') ?? 1;
-    setState(_start);
+    _start();
   }
 
-  void _start() {
+  Future<void> _start() async {
+    if (!Puzzle.isStored(level, size)) {
+      // Fallback-Generator kann dauern: erst Ladebildschirm zeichnen lassen.
+      setState(() => loaded = false);
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
     puzzle = Puzzle.forLevel(level, size);
     marks = List.generate(puzzle.n, (_) => List.filled(puzzle.n, Mark.none));
     hearts = 3;
     wrong = null;
+    if (mounted) setState(() => loaded = true);
   }
 
   int get placed =>
@@ -158,6 +163,28 @@ class _GamePageState extends State<GamePage> {
         ),
       );
 
+  void _rules() => showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('So geht Quokkadoku'),
+          content: const Text(
+            '🏡 In jedem farbigen Gebiet wohnt genau ein Quokka.\n\n'
+            '↔️ In jeder Zeile und jeder Spalte sitzt genau eines.\n\n'
+            '🚫 Quokkas berühren sich nie, auch nicht diagonal.\n\n'
+            '👆 Tippen setzt ein ✕ auf Felder, wo keins sitzen kann.\n'
+            '👆👆 Doppeltippen setzt ein Quokka. Falsch = ein Herz weg, '
+            'drei Fehler = Runde von vorn.\n\n'
+            '💡 Die Glühbirne deckt ein Quokka auf (ohne Punkte).\n'
+            '⚙️ Im Menü: Feldgröße und ob ✕ automatisch gesetzt werden.',
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Alles klar'))
+          ],
+        ),
+      );
+
   Future<void> _won() async {
     final bonus = hearts * 20 * puzzle.n;
     setState(() {
@@ -178,7 +205,7 @@ class _GamePageState extends State<GamePage> {
 
   Future<void> _lost() async {
     await _dialog('Keine Herzen mehr 💔', 'Nochmal versuchen?', 'Nochmal');
-    setState(_start);
+    _start();
   }
 
   Widget _cell(int r, int c, int n) {
@@ -231,7 +258,7 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     if (!loaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: LoadingQuokka()));
     }
     final n = puzzle.n;
     return Scaffold(
@@ -239,6 +266,11 @@ class _GamePageState extends State<GamePage> {
         backgroundColor: const Color(0xFFFFE7C7),
         title: Text('Runde $level · ${Puzzle.difficulty(n)} · $n×$n'),
         actions: [
+          IconButton(
+            tooltip: 'Spielanleitung',
+            icon: const Icon(Icons.info_outline),
+            onPressed: _rules,
+          ),
           PopupMenuButton<int>(
             tooltip: 'Einstellungen',
             icon: const Icon(Icons.tune),

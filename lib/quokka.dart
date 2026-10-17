@@ -126,3 +126,45 @@ class Sparkle extends StatelessWidget {
     );
   }
 }
+
+/// Ladebildschirm: Quokka hüpft, bis das Feld da ist.
+class LoadingQuokka extends StatefulWidget {
+  const LoadingQuokka({super.key});
+  @override
+  State<LoadingQuokka> createState() => _LoadingQuokkaState();
+}
+
+class _LoadingQuokkaState extends State<LoadingQuokka>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 600))
+    ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _c,
+            builder: (_, child) => Transform.translate(
+              offset: Offset(0, -30 * Curves.easeOut.transform(_c.value)),
+              child: Transform.rotate(
+                  angle: (_c.value - 0.5) * 0.3, child: child),
+            ),
+            child: const SizedBox(
+                width: 120,
+                height: 120,
+                child: CustomPaint(painter: _QuokkaPainter())),
+          ),
+          const SizedBox(height: 24),
+          const Text('Quokkas suchen ihr Revier…',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        ],
+      );
+}
