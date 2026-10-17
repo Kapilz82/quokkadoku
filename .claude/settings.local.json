@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(foreach \\($c in 'flutter','dart','node','java','adb'\\) { $p = Get-Command $c -ErrorAction SilentlyContinue; if \\($p\\) { \"$c : $\\($p.Source\\)\" } else { \"$c : fehlt\" } }; Test-Path \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\")"
+    ]
+  }
+}
