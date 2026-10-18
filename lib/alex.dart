@@ -11,6 +11,14 @@ const _niceWords = [
   'Ich kuschel gerne mit dir.',
   'Ich finde dich süß, wie du auf mir schläfst.',
   'Ich habe dich gerne an meiner Seite.',
+  'Ich mag, wie du lachst.',
+  'Mit dir ist sogar Nichtstun schön.',
+  'Du bist mein Lieblingsmensch.',
+  'Wenn du das liest: Ich denk grad an dich.',
+  'Du bist klüger als jedes 10×10.',
+  'Ich freu mich jedes Mal, wenn du nach Hause kommst.',
+  'Mein Revier ist da, wo du bist.',
+  'Du machst schlechte Tage gut.',
 ];
 
 const _banners = [
