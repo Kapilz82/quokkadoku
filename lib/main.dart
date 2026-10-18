@@ -55,6 +55,7 @@ class _GamePageState extends State<GamePage> {
   int level = 1;
   int size = 7;
   int score = 0;
+  int seed = 0; // einmal pro Gerät gewürfelt, mischt die Rätsel-Reihenfolge
   bool autoCross = false; // Luisa setzt ihre ✕ lieber selbst
   late Puzzle puzzle;
   late List<List<Mark>> marks;
@@ -73,6 +74,8 @@ class _GamePageState extends State<GamePage> {
       level = p.getInt('level_$size') ?? 1;
       score = p.getInt('score') ?? 0;
       autoCross = p.getBool('autoCross') ?? false;
+      seed = p.getInt('seed') ?? DateTime.now().millisecondsSinceEpoch % 100000;
+      p.setInt('seed', seed);
       _start();
     });
   }
@@ -96,7 +99,7 @@ class _GamePageState extends State<GamePage> {
       setState(() => loaded = false);
       await Future.delayed(const Duration(milliseconds: 50));
     }
-    puzzle = Puzzle.forLevel(level, size);
+    puzzle = Puzzle.forLevel(level, size, seed: seed);
     marks = List.generate(puzzle.n, (_) => List.filled(puzzle.n, Mark.none));
     hearts = 3;
     wrong = null;

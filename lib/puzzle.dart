@@ -23,10 +23,12 @@ class Puzzle {
 
   /// Vorab generierte Rätsel aus levels.dart; danach Fallback auf den
   /// Generator (bei 10x10 langsam, deshalb die Vorberechnung).
-  static Puzzle forLevel(int level, int n) {
-    final list = levels[n] ?? const [];
+  /// [seed] mischt die Reihenfolge einmal pro Gerät, damit nicht jeder mit
+  /// demselben Rätsel startet; der Fortschritt bleibt trotzdem stabil.
+  static Puzzle forLevel(int level, int n, {int seed = 0}) {
+    final list = List.of(levels[n] ?? const [])..shuffle(Random(seed + n));
     if (level - 1 < list.length) return fromRegions(list[level - 1]);
-    return generate(n, Random(level * 7919 + n));
+    return generate(n, Random(level * 7919 + n + seed));
   }
 
   /// Gebiete als n*n Ziffern, Lösung wird per Löser bestimmt.
