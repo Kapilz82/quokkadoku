@@ -109,10 +109,24 @@ class _GamePageState extends State<GamePage> {
   int get placed =>
       marks.expand((r) => r).where((m) => m == Mark.quokka).length;
 
+  (int, int)? _lastTap;
+  DateTime _lastTapAt = DateTime(0);
+
+  /// ✕ sofort setzen (kein 300-ms-Warten von onDoubleTap); zweiter Tipp
+  /// auf dasselbe Feld innerhalb 300 ms = Quokka setzen.
   void _tap(int r, int c) {
     if (marks[r][c] == Mark.quokka) return;
+    final now = DateTime.now();
+    final isDouble = _lastTap == (r, c) &&
+        now.difference(_lastTapAt) < const Duration(milliseconds: 300);
+    _lastTap = (r, c);
+    _lastTapAt = now;
     setState(() =>
         marks[r][c] = marks[r][c] == Mark.cross ? Mark.none : Mark.cross);
+    if (isDouble) {
+      _lastTap = null;
+      _doubleTap(r, c);
+    }
   }
 
   Future<void> _addPoints(int r, int c, int points) async {
@@ -140,6 +154,7 @@ class _GamePageState extends State<GamePage> {
       _place(r, c, points: 10 * puzzle.n);
     } else {
       setState(() {
+        marks[r][c] = Mark.none; // das ✕ vom ersten Tipp zurücknehmen
         hearts--;
         wrong = (r, c);
       });
@@ -252,16 +267,15 @@ class _GamePageState extends State<GamePage> {
     final edge = Color.lerp(color, Colors.black, 0.18)!;
     return GestureDetector(
       onTap: () => _tap(r, c),
-      onDoubleTap: () => _doubleTap(r, c),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(n > 8 ? 7 : 10),
           border: Border(bottom: BorderSide(color: edge, width: 3)),
         ),
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 120),
           transitionBuilder: (child, anim) =>
               ScaleTransition(scale: anim, child: child),
           child: switch (mark) {
