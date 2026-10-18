@@ -45,29 +45,182 @@ String eggText(int size) => switch (size) {
           'mit allem Drum und Dran. Du hast es dir verdient. ❤️',
     };
 
-Future<void> showEgg(BuildContext context, int size) => showDialog(
+Future<void> showEgg(BuildContext context, int size) => Navigator.push(
+    context, MaterialPageRoute(builder: (_) => AchievementPage(size: size)));
+
+/// Gutschein als Achievement-Seite: zum Screenshotten gemacht.
+class AchievementPage extends StatelessWidget {
+  final int size;
+  const AchievementPage({super.key, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    const brown = Color(0xFF6D4C41);
+    final nr = eggSizes.indexOf(size) + 1;
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF6E9),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🏆 ACHIEVEMENT 🏆',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 3,
+                        color: Color(0xFFA1887F))),
+                const SizedBox(height: 10),
+                Text('Runde 10 bei $size×$size',
+                    style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: brown)),
+                const SizedBox(height: 20),
+                // Gutschein-Karte
+                Container(
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: [Color(0xFFFFE0A3), Color(0xFFFFC9C9)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: brown, width: 3),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 8))
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: 1),
+                        duration: const Duration(milliseconds: 900),
+                        curve: Curves.elasticOut,
+                        builder: (_, t, child) =>
+                            Transform.scale(scale: t, child: child),
+                        child: const Text('🍣',
+                            style: TextStyle(fontSize: 90)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(eggTitle(size).replaceFirst('🍣 ', ''),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: brown)),
+                      const SizedBox(height: 12),
+                      Text(eggText(size),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16, color: brown)),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Text(
+                            'Gutschein-Nr. QK-$size$size-00$nr · Gültig: immer',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: brown)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Container(
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFEBDCC8))),
+                  child: const Text(
+                    '📸 Einlösen: Screenshot von diesem Gutschein machen '
+                    'und an Alex schicken.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: brown),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                FilledButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.favorite),
+                  label: const Text('Weiterspielen'),
+                ),
+                const SizedBox(height: 8),
+                const Text('Im Menü unter „Meine Gutscheine" jederzeit wieder zu finden.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Color(0xFFA1887F))),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Liste der verdienten Gutscheine (Menüpunkt).
+Future<void> showVouchers(BuildContext context, Set<int> earned) => showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFFFFF6E9),
-        title: Text(eggTitle(size),
-            style: const TextStyle(
+        title: const Text('🍣 Meine Gutscheine',
+            style: TextStyle(
                 color: Color(0xFF6D4C41), fontWeight: FontWeight.w900)),
-        content: Text(eggText(size), style: const TextStyle(fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final s in eggSizes)
+              ListTile(
+                enabled: earned.contains(s),
+                leading: Text(earned.contains(s) ? '🍣' : '🔒',
+                    style: const TextStyle(fontSize: 24)),
+                title: Text(earned.contains(s)
+                    ? eggTitle(s).replaceFirst('🍣 ', '')
+                    : 'Gutschein ${eggSizes.indexOf(s) + 1}/3'),
+                subtitle: Text(earned.contains(s)
+                    ? 'Antippen zum Ansehen'
+                    : 'Erreiche Runde 10 bei $s×$s'),
+                onTap: earned.contains(s)
+                    ? () {
+                        Navigator.pop(context);
+                        showEgg(context, s);
+                      }
+                    : null,
+              ),
+          ],
+        ),
         actions: [
-          FilledButton(
+          TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Einlösen bei Alex'))
+              child: const Text('Schließen'))
         ],
       ),
     );
 
-/// Werbebanner-Parodie unter dem Brett. Wechselt bei jedem Aufbau.
+/// Werbebanner-Parodie unter dem Brett.
 class AlexBanner extends StatelessWidget {
-  const AlexBanner({super.key});
+  final int round; // wechselt den Banner der Reihe nach
+  final VoidCallback onClose;
+  const AlexBanner({super.key, required this.round, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
-    final (icon, text) = _banners[Random().nextInt(_banners.length)];
+    final (icon, text) = _banners[round % _banners.length];
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: Material(
@@ -111,6 +264,13 @@ class AlexBanner extends StatelessWidget {
                 ),
                 const Text('Anzeige',
                     style: TextStyle(fontSize: 10, color: Color(0xFFA1887F))),
+                IconButton(
+                  tooltip: 'Wegdrücken',
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.close,
+                      size: 18, color: Color(0xFFA1887F)),
+                  onPressed: onClose,
+                ),
               ],
             ),
           ),

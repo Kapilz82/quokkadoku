@@ -66,6 +66,7 @@ class _GamePageState extends State<GamePage> {
   final floats = <_Float>[];
   int floatId = 0;
   int sparkles = 0; // > 0 während der Gewinn-Konfetti
+  int bannersClosed = 0; // pro Runde; nach 3 ist Ruhe
 
   @override
   void initState() {
@@ -88,6 +89,14 @@ class _GamePageState extends State<GamePage> {
       await p.setBool('autoCross', autoCross);
       return;
     }
+    if (n == -2) {
+      final earned = {
+        for (final s in eggSizes)
+          if (p.getBool('egg_$s') ?? false) s
+      };
+      if (mounted) await showVouchers(context, earned);
+      return;
+    }
     await p.setInt('size', n);
     size = n;
     level = p.getInt('level_$size') ?? 1;
@@ -104,6 +113,7 @@ class _GamePageState extends State<GamePage> {
     marks = List.generate(puzzle.n, (_) => List.filled(puzzle.n, Mark.none));
     hearts = 3;
     wrong = null;
+    bannersClosed = 0;
     if (mounted) setState(() => loaded = true);
   }
 
@@ -377,6 +387,9 @@ class _GamePageState extends State<GamePage> {
                           value: -1,
                           checked: autoCross,
                           child: const Text('✕ automatisch setzen')),
+                      if (luisaBuild)
+                        const PopupMenuItem(
+                            value: -2, child: Text('🍣 Meine Gutscheine')),
                     ],
                   ),
                 ],
@@ -531,7 +544,12 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
             ),
-            if (luisaBuild) const AlexBanner(),
+            if (luisaBuild && bannersClosed < 3)
+              AlexBanner(
+                key: ValueKey('banner$bannersClosed'),
+                round: level + size + bannersClosed,
+                onClose: () => setState(() => bannersClosed++),
+              ),
             const Padding(
               padding: EdgeInsets.only(bottom: 10),
               child: Text('Tippen = ✕ · Doppeltippen = Quokka setzen',
