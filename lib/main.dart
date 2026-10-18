@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'alex.dart';
 import 'puzzle.dart';
 import 'quokka.dart';
 
@@ -209,11 +210,19 @@ class _GamePageState extends State<GamePage> {
       _addPoints(puzzle.n ~/ 2, puzzle.n ~/ 2, bonus);
     });
     level++;
-    (await SharedPreferences.getInstance()).setInt('level_$size', level);
+    final p = await SharedPreferences.getInstance();
+    await p.setInt('level_$size', level);
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
     await _dialog('Alle Quokkas zuhause! 🎉',
         'Herz-Bonus +$bonus\nWeiter zu Runde $level', 'Los');
+    if (luisaBuild &&
+        level == 10 &&
+        eggSizes.contains(size) &&
+        !(p.getBool('egg_$size') ?? false)) {
+      await p.setBool('egg_$size', true);
+      if (mounted) await showEgg(context, size);
+    }
     sparkles = 0;
     _start();
   }
@@ -522,6 +531,7 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
             ),
+            if (luisaBuild) const AlexBanner(),
             const Padding(
               padding: EdgeInsets.only(bottom: 10),
               child: Text('Tippen = ✕ · Doppeltippen = Quokka setzen',
