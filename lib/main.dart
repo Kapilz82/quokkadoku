@@ -89,7 +89,7 @@ class _GamePageState extends State<GamePage> {
       await p.setBool('autoCross', autoCross);
       return;
     }
-    if (n == -2) {
+    if (luisaBuild && n == -2) {
       final earned = {
         for (final s in eggSizes)
           if (p.getBool('egg_$s') ?? false) s
